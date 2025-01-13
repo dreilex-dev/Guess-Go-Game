@@ -8,7 +8,9 @@ export const useUserStore = create((set) => ({
   isLoading: true,
   playingUser: null,
   allPlayers: [],
+  gameState: "notReady",
   setAllPlayers: (players) => set({ allPlayers: players }),
+  setGameState: (str) => set({ gameState: str }),
   setCurrentUser: async (user) => set({ currentUser: user }),
   resetUser: () => set({ currentUser: null }),
   fetchUserInfo: async (uid) => {
@@ -102,6 +104,4 @@ export const useUserStore = create((set) => ({
       set({ playingUser: null });
     }
   },
-
-  fetch,
 }));

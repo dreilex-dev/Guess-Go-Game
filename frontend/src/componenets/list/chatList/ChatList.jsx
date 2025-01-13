@@ -167,21 +167,36 @@ const ChatList = () => {
             const uniqueItems = Array.from(
               new Map(items.map((item) => [item.id, item])).values()
             );
-            const promises = uniqueItems.map(async (item) => {
-              const userDocRef = doc(db, "users", item.receiverId);
-              const userDocSnap = await getDoc(userDocRef);
-              const user = userDocSnap.data();
 
-              return { ...item, user };
+            const promises = uniqueItems.map(async (item) => {
+              try {
+                const userDocRef = doc(db, "users", item.receiverId);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (userDocSnap.exists()) {
+                  const user = userDocSnap.data();
+
+                  if (user?.game_code === currentUser.game_code) {
+                    return { ...item, user };
+                  }
+                }
+              } catch (error) {
+                console.error("Error fetching user data:", error);
+              }
+              return null;
             });
-            const chatData = await Promise.all(promises);
+
+            const chatData = (await Promise.all(promises)).filter(Boolean);
+
             console.log("chatData", chatData);
+
             setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
           } else {
             console.error("User chats document does not exist.");
           }
         }
       );
+
       return () => {
         unSub();
       };

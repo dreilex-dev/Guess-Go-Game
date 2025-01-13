@@ -1,89 +1,96 @@
 import React, { useEffect, useState } from "react";
 import "./addUser.css";
 import { useUserStore } from "../../../../lib/userStore";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  getDoc,
-  doc,
-  setDoc,
-  serverTimestamp,
-  updateDoc,
-  arrayUnion,
-} from "firebase/firestore";
+import { doc, onSnapshot, updateDoc } from "firebase/firestore";
 import { db } from "../../../../lib/firebase";
 import { toast } from "react-toastify";
 
 const AddUser = () => {
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const { currentUser, setAllPlayers } = useUserStore();
+  const [loading, setLoading] = useState(true);
+  const { currentUser, setAllPlayers, allPlayers } = useUserStore();
 
-  const fetchUsersInLobby = async () => {
+  useEffect(() => {
     if (!currentUser.game_code || !currentUser) {
       toast.error("Game lobby code not found for the current user.");
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    try {
-      const gameLobbyDocRef = doc(db, "gameLobby", currentUser.game_code);
-      const gameLobbyDoc = await getDoc(gameLobbyDocRef);
+    const gameLobbyDocRef = doc(db, "gameLobby", currentUser.game_code);
 
+    const unsubscribeLobby = onSnapshot(gameLobbyDocRef, (gameLobbyDoc) => {
       if (gameLobbyDoc.exists()) {
         const lobbyData = gameLobbyDoc.data();
 
         if (lobbyData.participants && Array.isArray(lobbyData.participants)) {
-          const filteredUsersIDs = lobbyData.participants
-            .filter((user) => user.id !== currentUser.id)
-            .map((user) => user.id);
+          const filteredUsersIDs = lobbyData.participants.map(
+            (user) => user.id
+          );
+
           const usersInLobby = [];
 
-          for (const userId of filteredUsersIDs) {
+          filteredUsersIDs.forEach((userId) => {
             const userDocRef = doc(db, "users", userId);
-            const userDoc = await getDoc(userDocRef);
+            onSnapshot(userDocRef, (userDoc) => {
+              if (userDoc.exists()) {
+                const userData = userDoc.data();
+                if (userData.game_code === currentUser.game_code) {
+                  if (!usersInLobby.some((user) => user.id === userDoc.id)) {
+                    usersInLobby.push({ id: userDoc.id, ...userData });
+                  }
+                  setUsers((prevUsers) => {
+                    const updatedUsers = [...prevUsers, ...usersInLobby];
 
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              if (userData.game_code === currentUser.game_code) {
-                usersInLobby.push({ id: userDoc.id, ...userData });
+                    const uniqueUsers = updatedUsers.filter(
+                      (value, index, self) =>
+                        index === self.findIndex((t) => t.id === value.id)
+                    );
+
+                    return uniqueUsers;
+                  });
+                }
               }
-            }
-          }
+            });
+          });
 
-          setUsers(usersInLobby);
           setAllPlayers(usersInLobby);
-          toast.success("Users fetched successfully!");
         } else {
           toast.error("No participants found in the lobby.");
         }
       } else {
         console.error("Game lobby does not exist.");
       }
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      toast.error("Failed to fetch users.");
-    } finally {
+    });
+
+    return () => unsubscribeLobby();
+  }, [currentUser, setAllPlayers]);
+
+  useEffect(() => {
+    if (users.length > 0) {
       setLoading(false);
+    }
+  }, [users]);
+
+  const handlePlayersReady = async () => {
+    try {
+      const gameLobbyDocRef = doc(db, "gameLobby", currentUser.game_code);
+      await updateDoc(gameLobbyDocRef, {
+        gameState: "ready",
+      });
+
+      setAllPlayers(users);
+      toast.success("All players are ready!");
+    } catch (error) {
+      toast.error("Failed to update game state.");
+      console.error(error);
     }
   };
 
-  const handleRefresh = async (e) => {
-    e.preventDefault();
-    await fetchUsersInLobby();
-  };
-
-  console.log("users from the lobby", users);
+  console.log("allPlayers from the state!", allPlayers);
 
   return (
     <div className="addUser">
-      <form onSubmit={handleRefresh}>
-        <button type="submit" disabled={loading}>
-          {loading ? "Refreshing..." : "Refresh"}
-        </button>
-      </form>
       {loading ? (
         <p>Loading players...</p>
       ) : (
@@ -107,6 +114,7 @@ const AddUser = () => {
           )}
         </>
       )}
+      <button onClick={handlePlayersReady}>All Players Are Ready?</button>
     </div>
   );
 };

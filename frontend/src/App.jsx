@@ -8,6 +8,9 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./lib/firebase";
 import { useUserStore } from "./lib/userStore";
 import { useChatStore } from "./lib/chatStore";
+import AddUser from "./componenets/list/chatList/addUser/AddUser";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "./lib/firebase";
 
 const App = () => {
   const {
@@ -17,6 +20,9 @@ const App = () => {
     incrementPoints,
     decrementHints,
     setIsPlaying,
+    allPlayers,
+    gameState,
+    setGameState,
   } = useUserStore();
 
   const { chatId } = useChatStore();
@@ -27,12 +33,29 @@ const App = () => {
     }
   }, [fetchUserInfo]);
 
+  useEffect(() => {
+    if (currentUser && currentUser.game_code) {
+      const gameLobbyDocRef = doc(db, "gameLobby", currentUser.game_code);
+      const unsubscribe = onSnapshot(gameLobbyDocRef, (gameLobbyDoc) => {
+        if (gameLobbyDoc.exists()) {
+          const lobbyData = gameLobbyDoc.data();
+          if (lobbyData.gameState === "ready") {
+            setGameState("ready");
+          }
+        }
+      });
+
+      return () => unsubscribe();
+    }
+  }, [currentUser, currentUser?.game_code, setGameState]);
+
   if (isLoading) return <div className="loading">Loading..</div>;
   return (
     <div className="container">
       {currentUser ? (
         <>
-          {true && <List />}
+          {gameState !== "ready" && <AddUser />}
+          {gameState === "ready" && <List />}
           {chatId && <Chat />}
           {chatId && <Details />}
         </>

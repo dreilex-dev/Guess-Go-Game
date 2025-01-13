@@ -78,6 +78,12 @@ const Chat = () => {
     }
   };
 
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter" && text.trim() !== "") {
+      handleSend();
+    }
+  };
+
   return (
     <div className="chat">
       <div className="top">
@@ -124,6 +130,7 @@ const Chat = () => {
           value={text}
           placeholder="Type a mesage.."
           onChange={(e) => setText(e.target.value)}
+          onKeyPress={handleKeyPress}
         />
         <div className="emoji">
           <img

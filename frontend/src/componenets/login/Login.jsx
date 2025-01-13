@@ -1,38 +1,48 @@
-import React, { useState,useEffect} from 'react';
-import './login.css';
-import { avatars } from '../../../public/avatars';
+import React, { useState, useEffect } from "react";
+import "./login.css";
+import { avatars } from "../../../public/avatars";
 import { signInAnonymously } from "firebase/auth";
-import { auth ,db} from '../../lib/firebase';
-import { setDoc, doc,getDoc, collection, updateDoc,addDoc, serverTimestamp } from "firebase/firestore";
-import { toast } from 'react-toastify';
-import { nanoid } from 'nanoid';
+import { db } from "../../lib/firebase";
+import {
+  setDoc,
+  doc,
+  getDoc,
+  collection,
+  updateDoc,
+  addDoc,
+  serverTimestamp,
+} from "firebase/firestore";
+import { toast } from "react-toastify";
+import { nanoid } from "nanoid";
+import { useUserStore } from "../../lib/userStore";
 
 const Login = () => {
-  
   const [avatarJoin, setAvatarJoin] = useState(null);
-  const [gameCode, setGameCode] = useState('');
-  const [usernameJoin, setUsernameJoin] = useState('');
-  const [hintNo1Join, setHintNo1Join] = useState('');
-  const [hintNo2Join, setHintNo2Join] = useState('');
+  const [gameCode, setGameCode] = useState("");
+  const [usernameJoin, setUsernameJoin] = useState("");
+  const [hintNo1Join, setHintNo1Join] = useState("");
+  const [hintNo2Join, setHintNo2Join] = useState("");
   const [loadingJoin, setLoadingJoin] = useState(false);
 
-  
   const [avatarCreate, setAvatarCreate] = useState(null);
-  const [usernameCreate, setUsernameCreate] = useState('');
-  const [hintNo1Create, setHintNo1Create] = useState('');
-  const [hintNo2Create, setHintNo2Create] = useState('');
+  const [usernameCreate, setUsernameCreate] = useState("");
+  const [hintNo1Create, setHintNo1Create] = useState("");
+  const [hintNo2Create, setHintNo2Create] = useState("");
   const [loadingCreate, setLoadingCreate] = useState(false);
 
-
   const [usedAvatars, setUsedAvatars] = useState([]);
+  const resetUser = useUserStore((state) => state.resetUser);
 
   const getRandomAvatar = () => {
-    const availableAvatars = avatars.filter((avatar) => !usedAvatars.includes(avatar));
+    const availableAvatars = avatars.filter(
+      (avatar) => !usedAvatars.includes(avatar)
+    );
     if (availableAvatars.length === 0) {
       alert("No avatars available! Please reset the game.");
       return null;
     }
-    const randomAvatar = availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
+    const randomAvatar =
+      availableAvatars[Math.floor(Math.random() * availableAvatars.length)];
     return randomAvatar;
   };
 
@@ -53,97 +63,160 @@ const Login = () => {
 
   const handleJoinGame = async (e) => {
     e.preventDefault();
+    await resetUser();
     setLoadingJoin(true);
-    const formData= new FormData(e.target);
-    const {username_join,game_code,hint_no1_join,hint_no2_join}=Object.fromEntries(formData);
+    const formData = new FormData(e.target);
+    const { username_join, game_code, hint_no1_join, hint_no2_join } =
+      Object.fromEntries(formData);
 
-    if (!username_join ||!game_code|| !hint_no1_join || !hint_no2_join) {
+    if (!username_join || !game_code || !hint_no1_join || !hint_no2_join) {
       toast.error("Please fill in all the fields.");
-      setLoadingCreate(false); 
-      return; 
+      setLoadingJoin(false);
+      return;
     }
-    
-    try{
-      const res =await signInAnonymously(auth);
-      const userId = res.user.uid;
 
+    try {
       const gameLobbyRef = doc(db, "gameLobby", game_code);
       const gameLobbySnap = await getDoc(gameLobbyRef);
 
       if (!gameLobbySnap.exists()) {
         toast.error("Invalid game code. Please try again.");
+        setLoadingJoin(false);
+        window.location.reload();
         return;
       }
+      const userId = nanoid();
+
+      useUserStore.getState().setCurrentUser({
+        id: userId,
+        username: username_join,
+        game_code,
+        hint_no1: hint_no1_join,
+        hint_no2: hint_no2_join,
+        avatar: avatarJoin,
+        no_of_hints: 3,
+        points: 0,
+        is_playing: "",
+      });
 
       const gameLobbyData = gameLobbySnap.data();
       await updateDoc(gameLobbyRef, {
-        participants: [...gameLobbyData.participants, { id: userId, username_join, avatar: avatarJoin }],
+        participants: [
+          ...gameLobbyData.participants,
+          {
+            id: userId,
+          },
+        ],
       });
 
-      await addDoc(collection(db, "users"), {
-        username:username_join,
-        game_code,
-        hint_no1:hint_no1_join,
-        hint_no2:hint_no2_join,
-        avatar:avatarJoin
-      },{ merge: true });
+      await setDoc(
+        doc(db, "users", userId),
+        {
+          id: userId,
+          username: username_join,
+          game_code,
+          hint_no1: hint_no1_join,
+          hint_no2: hint_no2_join,
+          avatar: avatarJoin,
+          no_of_hints: 3,
+          points: 0,
+          is_playing: "",
+        },
+        { merge: true }
+      );
 
-      await addDoc(collection(db, "userChats",), {
-        chats:[]
-      },{ merge: true });
-      toast.success('You can join the game now!')
-    }catch(error){
-      toast.error("An error occurred while joining the game. Please try again.");
+      await setDoc(
+        doc(db, "userChats", userId),
+        {
+          chats: [],
+        },
+        { merge: true }
+      );
+      toast.success("You can join the game now!");
+    } catch (error) {
+      toast.error(
+        "An error occurred while joining the game. Please try again."
+      );
       console.error(error);
-    }finally{
+    } finally {
       setLoadingJoin(false);
     }
   };
 
   const handleCreateGame = async (e) => {
     e.preventDefault();
+    await resetUser();
     setLoadingCreate(true);
-    
 
-    const formData= new FormData(e.target);
-    const {username_create,hint_no1_create,hint_no2_create}=Object.fromEntries(formData);
+    const formData = new FormData(e.target);
+    const { username_create, hint_no1_create, hint_no2_create } =
+      Object.fromEntries(formData);
 
     if (!username_create || !hint_no1_create || !hint_no2_create) {
       toast.error("Please fill in all the fields.");
-      setLoadingCreate(false); 
-      return; 
+      setLoadingCreate(false);
+      return;
     }
 
-    try{
-      const res =await signInAnonymously(auth);
-      const userId = res.user.uid;
+    try {
+      const userId = nanoid();
 
-      const gameCode = nanoid(6); 
+      const gameCode = nanoid(6);
 
-      await setDoc(doc(db, "users", userId ), {
-        username:username_create,
-        hint_no1:hint_no1_create,
-        hint_no2:hint_no2_create,
-        id:userId ,
-        avatar:avatarCreate
-      },{ merge: true });
+      await useUserStore.getState().setCurrentUser({
+        id: userId,
+        username: username_create,
+        game_code: gameCode,
+        hint_no1: hint_no1_create,
+        hint_no2: hint_no2_create,
+        avatar: avatarCreate,
+        no_of_hints: 3,
+        points: 0,
+        is_playing: "",
+      });
 
-      await setDoc(doc(db, "userChats", userId ), {
-        chats:[],
-      },{ merge: true });
+      await setDoc(
+        doc(db, "users", userId),
+        {
+          id: userId,
+          username: username_create,
+          game_code: gameCode,
+          hint_no1: hint_no1_create,
+          hint_no2: hint_no2_create,
+          avatar: avatarCreate,
+          no_of_hints: 3,
+          points: 0,
+          is_playing: "",
+        },
+        { merge: true }
+      );
+
+      await setDoc(
+        doc(db, "userChats", userId),
+        {
+          chats: [],
+        },
+        { merge: true }
+      );
 
       const gameLobbyRef = doc(db, "gameLobby", gameCode);
-      await setDoc(gameLobbyRef, {
-        gameCode,
-        createdBy: userId,
-        createdAt: serverTimestamp(),
-        participants: [{ id: userId, username: username_create, avatar: avatarCreate }], // Add creator as first participant
-      },{ merge: true });
-      toast.success(`Game created successfully! Share this code with others: ${gameCode}`);
-    }catch(error){
+      await setDoc(
+        gameLobbyRef,
+        {
+          gameCode,
+          createdBy: userId,
+          createdAt: serverTimestamp(),
+          participants: [{ id: userId }],
+        },
+        { merge: true }
+      );
+      toast.success(
+        `Game created successfully! Share this code with others: ${gameCode}`
+      );
+    } catch (error) {
       console.error("Error creating game:", error);
       toast.error("Failed to create game. Please try again.");
-    }finally{
+    } finally {
       setLoadingCreate(false);
     }
   };
@@ -158,7 +231,11 @@ const Login = () => {
       <div className="item">
         <h2>Join a Game</h2>
         <form onSubmit={handleJoinGame}>
-        <img src={avatarJoin || './avatar.png'} alt="Avatar" style={{ width: '100px', height: '100px' }} />
+          <img
+            src={avatarJoin || "./avatar.png"}
+            alt="Avatar"
+            style={{ width: "100px", height: "100px" }}
+          />
           <input
             type="text"
             placeholder="Game Code"
@@ -188,7 +265,7 @@ const Login = () => {
             onChange={(e) => setHintNo2Join(e.target.value)}
           />
           <button disabled={loadingJoin}>
-            {loadingJoin ? 'Loading...' : 'Join a Lobby'}
+            {loadingJoin ? "Loading..." : "Join a Lobby"}
           </button>
         </form>
       </div>
@@ -198,7 +275,11 @@ const Login = () => {
       <div className="item">
         <h2>Create a Game</h2>
         <form onSubmit={handleCreateGame}>
-        <img src={avatarCreate || './avatar.png'} alt="Avatar" style={{ width: '100px', height: '100px' }} />
+          <img
+            src={avatarCreate || "./avatar.png"}
+            alt="Avatar"
+            style={{ width: "100px", height: "100px" }}
+          />
           <input
             type="text"
             placeholder="Username"
@@ -221,7 +302,7 @@ const Login = () => {
             onChange={(e) => setHintNo2Create(e.target.value)}
           />
           <button disabled={loadingCreate}>
-            {loadingCreate ? 'Loading...' : 'Create a Lobby'}
+            {loadingCreate ? "Loading..." : "Create a Lobby"}
           </button>
         </form>
       </div>

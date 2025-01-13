@@ -1,0 +1,25 @@
+.game-code {
+  position: absolute; 
+  bottom: 10px;
+  left: 10px;
+  z-index: 1050;
+  padding: 10px 15px;
+  background-color: #ffffff; 
+  color: #384b70;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 1rem;
+}
+
+.game-code p {
+  margin: 0;
+  text-align: center;
+  font-weight: bold;
+}
+
+.game-code strong {
+  display: block;
+  text-align: center;
+  font-size: 1.2rem;
+}

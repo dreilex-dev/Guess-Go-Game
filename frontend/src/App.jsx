@@ -8,6 +8,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "./lib/firebase";
 import { useUserStore } from "./lib/userStore";
 import { useChatStore } from "./lib/chatStore";
+import Lobby from "./componenets/lobby/Lobby";
 
 const App = () => {
   const {
@@ -31,17 +32,18 @@ const App = () => {
   return (
     <div className="container">
       {currentUser ? (
-        <>
-          {true && <List />}
-          {chatId && <Chat />}
-          {chatId && <Details />}
-        </>
+        currentUser.game_code? (
+          <Lobby />
+        ) : (
+          <Login />
+        )
       ) : (
         <Login />
       )}
       <Notification />
     </div>
   );
+  
 };
 
 export default App;

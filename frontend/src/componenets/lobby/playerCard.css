@@ -1,0 +1,14 @@
+.player-card {
+    width: 200px;
+    margin: 5px;
+    border-radius: 8px;
+}
+  
+  .player-card .card-img-top {
+    border-radius: 50%;
+    height: 100px;
+    width: 100px;
+    object-fit: cover;
+    margin: 0 auto;
+    margin-top: 10px;
+}

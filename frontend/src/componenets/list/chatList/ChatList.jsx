@@ -12,6 +12,7 @@ import {
   serverTimestamp,
   updateDoc,
   arrayUnion,
+  getDocs,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { useChatStore } from "../../../lib/chatStore";
@@ -24,6 +25,9 @@ const ChatList = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasCreatedChats, setHasCreatedChats] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredChats, setFilteredChats] = useState([]);
+  const [searching, setSearching] = useState(false);
 
   //console.log("All players from the store", allPlayers);
 
@@ -170,7 +174,6 @@ const ChatList = () => {
 
             const promises = uniqueItems.map(async (item) => {
               try {
-                // Fetch the data for the current user (receiverId in the chat)
                 const userDocRef = doc(db, "users", item.receiverId);
                 const userDocSnap = await getDoc(userDocRef);
 
@@ -180,11 +183,9 @@ const ChatList = () => {
                   if (user?.game_code === currentUser.game_code) {
                     const updatedItem = { ...item, user };
 
-                    // Loop through each user in the chat (if multiple users exist in chat)
-                    const usersInChat = [user, ...(item.users || [])]; // assuming item.users is an array of other users in the chat
+                    const usersInChat = [user, ...(item.users || [])];
                     for (const chatUser of usersInChat) {
                       if (chatUser.is_playing) {
-                        // Fetch opponent data based on is_playing for each user
                         const opponentRef = doc(
                           db,
                           "users",
@@ -204,7 +205,6 @@ const ChatList = () => {
                       }
                     }
 
-                    // Log updated item to ensure properties are added
                     console.log(
                       "Updated item with opponent data:",
                       updatedItem
@@ -292,25 +292,160 @@ const ChatList = () => {
         chats: userChats,
       });
       changeChat(chat.id, chat.user);
+      setSearchTerm("");
+      setFilteredChats([]);
     } catch (error) {
       console.log(error);
     }
   };
 
+  const handleRefresh = async () => {
+    fetchGameAndUsers();
+    toast.info("Refreshing user data...");
+  };
+
+  const handleSearch = async () => {
+    if (!searchTerm) {
+      toast.error("Please enter a name to search.");
+      handleRefresh();
+      setSearching(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const userCollectionRef = collection(db, "users");
+
+      const usernameQuery = query(
+        userCollectionRef,
+        where("username", "==", searchTerm.toLowerCase())
+      );
+
+      const userSnapshot = await getDocs(usernameQuery);
+
+      if (userSnapshot.empty) {
+        setLoading(false);
+        toast.info("No user found with the specified username.");
+        return;
+      }
+
+      let fackIdentity = null;
+      userSnapshot.forEach((doc) => {
+        fackIdentity = { id: doc.id, ...doc.data() };
+      });
+
+      const isPlayingQuery = query(
+        userCollectionRef,
+        where("is_playing", "==", fackIdentity.id)
+      );
+
+      const isPlayingSnapshot = await getDocs(isPlayingQuery);
+
+      if (isPlayingSnapshot.empty) {
+        setLoading(false);
+        toast.info("No users found with the specified is_playing ID.");
+        return;
+      }
+
+      const users = [];
+      isPlayingSnapshot.forEach((doc) => {
+        const userData = doc.data();
+
+        let matchedChat = null;
+
+        chats.forEach((chat) => {
+          if (
+            chat.id.includes(currentUser.id) &&
+            chat.id.includes(userData.id)
+          ) {
+            console.log(
+              "Found matching chat:",
+              chat.id,
+              currentUser.id,
+              userData.id
+            );
+            matchedChat = chat;
+          }
+        });
+
+        if (matchedChat) {
+          const chatData = {
+            id: matchedChat.id,
+            lastMessage: matchedChat.lastMessage,
+            receiverId: userData.id,
+            senderId: currentUser.id,
+            updatedAt: Date.now(),
+            is_playing_as_username: fackIdentity.username,
+            is_playing_as_avatar: fackIdentity.avatar,
+            user: userData,
+          };
+
+          users.push(chatData);
+        } else {
+          console.log("No matching chat found.");
+        }
+      });
+
+      setFilteredChats(users);
+      toast.success("Users found successfully!");
+      setSearching(false);
+
+      chats.forEach((chat) => {
+        console.log("all chats", chat.id);
+      });
+    } catch (error) {
+      console.error("Error in handleSearch:", error);
+      toast.error("An error occurred while searching.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      setSearching(true);
+      handleSearch();
+    }
+  };
+
+  useEffect(() => {
+    if (searchTerm === "") {
+      setFilteredChats([]);
+    }
+  }, [searchTerm]);
+
+  console.log("Chatssssssss", chats);
+  console.log(filteredChats);
+
   return (
     <>
-      {/*<AddUser />*/}
       <div className="chatList">
         <div className="search">
           <div className="searchBar">
-            <img src="./search.png" alt="" />
-            <input type="text" placeholder="Search" onChange={() => {}} />
+            <img src="./search.png" alt="" onClick={handleSearch} />
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleKeyDown}
+            />
           </div>
+          <img
+            src={"refresh.png"}
+            onClick={handleRefresh}
+            className="refreshButton"
+            alt="refresh"
+          />
         </div>
+
         {loading ? (
           <p>Loading users...</p>
         ) : (
-          chats.map((chat, index) => (
+          (filteredChats.length > 0 && searchTerm !== "" && !searching
+            ? filteredChats
+            : chats
+          ).map((chat, index) => (
             <div
               key={index}
               className="item"

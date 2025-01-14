@@ -73,33 +73,32 @@ const AddUser = () => {
     }
   }, [users]);
 
+  useEffect(() => {
+    if (users.length > 0) {
+      const allUsersValid = users.every(
+        (user) => user.is_playing && user.is_playing !== ""
+      );
+      if (!allUsersValid) {
+        console.error("Not all users have a valid 'is_playing' property.");
+        console.error(
+          "Invalid users:",
+          users.filter((user) => !user.is_playing)
+        );
+      }
+    }
+  }, [users]);
+
   const handlePlayersReady = async () => {
     try {
+      await assignRandomIsPlaying();
+
       const gameLobbyDocRef = doc(db, "gameLobby", currentUser.game_code);
-      await updateDoc(gameLobbyDocRef, {
-        gameState: "ready",
-      });
+      await updateDoc(gameLobbyDocRef, { gameState: "ready" });
 
       setAllPlayers(users);
       toast.success("All players are ready!");
-      await assignRandomIsPlaying();
-
-      const allUsersValid = users.every((user) => user.is_playing !== "");
-
-      users.forEach((user) => {
-        console.log(user);
-      });
-
-      if (!allUsersValid) {
-        toast.error("Not all users have a valid 'is_playing' property.");
-        return;
-      }
-
-      allUsersValid.map((user) => {
-        console.log(user);
-      });
     } catch (error) {
-      toast.error("Failed to update game state.");
+      toast.error("Failed to update game state or assign players.");
       console.error(error);
     }
   };
@@ -111,50 +110,54 @@ const AddUser = () => {
     }
 
     try {
-      // Shuffle the user IDs
       let availableIds = [...users.map((user) => user.id)].sort(
         () => Math.random() - 0.5
       );
 
       console.log("Shuffled IDs for assignment:", availableIds);
 
+      let hasConflicts = true;
+
+      while (hasConflicts) {
+        hasConflicts = false;
+
+        for (let i = 0; i < users.length; i++) {
+          if (availableIds[i] === users[i].id) {
+            hasConflicts = true;
+            const swapIndex = (i + 1) % availableIds.length;
+            [availableIds[i], availableIds[swapIndex]] = [
+              availableIds[swapIndex],
+              availableIds[i],
+            ];
+          }
+        }
+      }
+
+      console.log("Conflict-free IDs for assignment:", availableIds);
+
       const updates = [];
       const updatedUsers = [];
 
       for (let i = 0; i < users.length; i++) {
         const currentUserId = users[i].id;
+        const assignedId = availableIds[i];
 
-        // Find a valid ID (not the same as the current user's ID)
-        let randomIdIndex = availableIds.findIndex(
-          (id) => id !== currentUserId
-        );
-        if (randomIdIndex === -1) {
-          toast.error("Unable to assign a valid is_playing ID.");
-          return;
-        }
-
-        // Assign the ID and remove it from available IDs
-        const randomId = availableIds[randomIdIndex];
-        availableIds.splice(randomIdIndex, 1); // Remove the ID from the list
-        console.log(`Assigning random ID ${randomId} to user ${currentUserId}`);
+        console.log(`Assigning ID ${assignedId} to user ${currentUserId}`);
 
         const userDocRef = doc(db, "users", currentUserId);
-        updates.push(updateDoc(userDocRef, { is_playing: randomId }));
+        updates.push(updateDoc(userDocRef, { is_playing: assignedId }));
 
         updatedUsers.push({
           ...users[i],
-          is_playing: randomId,
+          is_playing: assignedId,
         });
-
-        if (currentUserId === currentUser.id) {
-          setCurrentUser({ ...currentUser, is_playing: randomId });
-        }
       }
 
-      // Commit updates to Firestore
       await Promise.all(updates);
       setUsers(updatedUsers);
-      toast.success("Random is_playing assignments completed!");
+      toast.success(
+        "Random is_playing assignments completed without conflicts!"
+      );
     } catch (error) {
       toast.error("Failed to assign is_playing properties.");
       console.error(error);

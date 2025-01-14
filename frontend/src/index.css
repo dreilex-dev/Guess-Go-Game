@@ -19,15 +19,15 @@ body {
 }
 
 .container {
-  max-width: 1200px; /* Setează o lățime maximă */
-  margin: auto; /* Asigură centrare pe ecran */
+  max-width: 1440px; 
+  margin: auto; 
   background-color: rgba(17, 25, 40, 0.75);
   backdrop-filter: blur(19px) saturate(180%);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.125);
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  padding: 80px;
   box-sizing: border-box;
 }
 

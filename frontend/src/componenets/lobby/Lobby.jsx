@@ -53,9 +53,8 @@ const Lobby = () => {
   };
 
   return (
-    <div className="d-flex flex-column align-items-center py-4">
-      <GameCode gameCode={lobbyCode} />
-      <div className="row g-4">
+    <div className="d-flex flex-column justify-content-between h-100">
+      <div className="row g-3 justify-content-start">
         {players.map((player) => (
           <div className="col-12 col-sm-6 col-md-4 col-lg-3" key={player.id}>
             <PlayerCard
@@ -65,6 +64,11 @@ const Lobby = () => {
             />
           </div>
         ))}
+      </div>
+      <div className="row g-4 mt-auto">
+        <div className="col-auto">
+          <GameCode gameCode={lobbyCode} />
+        </div>
       </div>
     </div>
   );

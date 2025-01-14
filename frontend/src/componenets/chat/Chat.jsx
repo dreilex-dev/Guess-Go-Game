@@ -21,6 +21,7 @@ const Chat = () => {
 
   const { currentUser } = useUserStore();
   const { chatId, user } = useChatStore();
+  const [userPlayingData, setUserPlayingData] = useState(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behaviour: "smooth" });
@@ -84,13 +85,46 @@ const Chat = () => {
     }
   };
 
+  useEffect(() => {
+    if (user?.is_playing) {
+      const fetchUserData = async () => {
+        const fetchedUser = await userIsPlayingAs(user.is_playing);
+        setUserPlayingData(fetchedUser);
+      };
+      fetchUserData();
+    }
+  }, [user?.is_playing]);
+
+  const userIsPlayingAs = async (id) => {
+    if (id) {
+      const userDocRef = doc(db, "users", id);
+      try {
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          return userDoc.data();
+        } else {
+          return null;
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        return null;
+      }
+    }
+    return null;
+  };
+
   return (
     <div className="chat">
       <div className="top">
         <div className="user">
-          <img src={user?.avatar || "./avatar.png"} alt="avatar" />
+          <img
+            src={userPlayingData ? userPlayingData.avatar : "/avatar.png"}
+            alt="avatar"
+          />
           <div className="texts">
-            <span>{user?.username}</span>
+            <span>
+              {userPlayingData ? userPlayingData.username : "Loading..."}
+            </span>
             <p>Guess who am I ! </p>
           </div>
         </div>

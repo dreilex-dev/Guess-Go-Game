@@ -8,7 +8,8 @@ import { toast } from "react-toastify";
 const AddUser = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { currentUser, setAllPlayers, allPlayers } = useUserStore();
+  const { currentUser, setAllPlayers, allPlayers, setCurrentUser } =
+    useUserStore();
 
   useEffect(() => {
     if (!currentUser.game_code || !currentUser) {
@@ -81,13 +82,90 @@ const AddUser = () => {
 
       setAllPlayers(users);
       toast.success("All players are ready!");
+      await assignRandomIsPlaying();
+
+      const allUsersValid = users.every((user) => user.is_playing !== "");
+
+      users.forEach((user) => {
+        console.log(user);
+      });
+
+      if (!allUsersValid) {
+        toast.error("Not all users have a valid 'is_playing' property.");
+        return;
+      }
+
+      allUsersValid.map((user) => {
+        console.log(user);
+      });
     } catch (error) {
       toast.error("Failed to update game state.");
       console.error(error);
     }
   };
 
-  console.log("allPlayers from the state!", allPlayers);
+  const assignRandomIsPlaying = async () => {
+    if (users.length < 2) {
+      toast.error("Not enough users to assign is_playing.");
+      return;
+    }
+
+    try {
+      // Shuffle the user IDs
+      let availableIds = [...users.map((user) => user.id)].sort(
+        () => Math.random() - 0.5
+      );
+
+      console.log("Shuffled IDs for assignment:", availableIds);
+
+      const updates = [];
+      const updatedUsers = [];
+
+      for (let i = 0; i < users.length; i++) {
+        const currentUserId = users[i].id;
+
+        // Find a valid ID (not the same as the current user's ID)
+        let randomIdIndex = availableIds.findIndex(
+          (id) => id !== currentUserId
+        );
+        if (randomIdIndex === -1) {
+          toast.error("Unable to assign a valid is_playing ID.");
+          return;
+        }
+
+        // Assign the ID and remove it from available IDs
+        const randomId = availableIds[randomIdIndex];
+        availableIds.splice(randomIdIndex, 1); // Remove the ID from the list
+        console.log(`Assigning random ID ${randomId} to user ${currentUserId}`);
+
+        const userDocRef = doc(db, "users", currentUserId);
+        updates.push(updateDoc(userDocRef, { is_playing: randomId }));
+
+        updatedUsers.push({
+          ...users[i],
+          is_playing: randomId,
+        });
+
+        if (currentUserId === currentUser.id) {
+          setCurrentUser({ ...currentUser, is_playing: randomId });
+        }
+      }
+
+      // Commit updates to Firestore
+      await Promise.all(updates);
+      setUsers(updatedUsers);
+      toast.success("Random is_playing assignments completed!");
+    } catch (error) {
+      toast.error("Failed to assign is_playing properties.");
+      console.error(error);
+    }
+  };
+
+  console.log(
+    " NeWWWWWWWWWWWWWWWWW allPlayers from the state in the adduser!",
+    allPlayers
+  );
+  console.log(" NewWWWWWWWWWWWWWWWW users from the AddUser", users);
 
   return (
     <div className="addUser">

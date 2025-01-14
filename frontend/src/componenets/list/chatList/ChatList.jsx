@@ -170,6 +170,7 @@ const ChatList = () => {
 
             const promises = uniqueItems.map(async (item) => {
               try {
+                // Fetch the data for the current user (receiverId in the chat)
                 const userDocRef = doc(db, "users", item.receiverId);
                 const userDocSnap = await getDoc(userDocRef);
 
@@ -177,7 +178,39 @@ const ChatList = () => {
                   const user = userDocSnap.data();
 
                   if (user?.game_code === currentUser.game_code) {
-                    return { ...item, user };
+                    const updatedItem = { ...item, user };
+
+                    // Loop through each user in the chat (if multiple users exist in chat)
+                    const usersInChat = [user, ...(item.users || [])]; // assuming item.users is an array of other users in the chat
+                    for (const chatUser of usersInChat) {
+                      if (chatUser.is_playing) {
+                        // Fetch opponent data based on is_playing for each user
+                        const opponentRef = doc(
+                          db,
+                          "users",
+                          chatUser.is_playing
+                        );
+                        const opponentDoc = await getDoc(opponentRef);
+
+                        if (opponentDoc.exists()) {
+                          const opponentData = opponentDoc.data();
+                          updatedItem.is_playing_as_avatar =
+                            opponentData?.avatar;
+                          updatedItem.is_playing_as_username =
+                            opponentData?.username;
+                        } else {
+                          console.log("Opponent document does not exist");
+                        }
+                      }
+                    }
+
+                    // Log updated item to ensure properties are added
+                    console.log(
+                      "Updated item with opponent data:",
+                      updatedItem
+                    );
+
+                    return updatedItem;
                   }
                 }
               } catch (error) {
@@ -187,8 +220,7 @@ const ChatList = () => {
             });
 
             const chatData = (await Promise.all(promises)).filter(Boolean);
-
-            console.log("chatData", chatData);
+            console.log("Processed chat data with opponents:", chatData);
 
             setChats(chatData.sort((a, b) => b.updatedAt - a.updatedAt));
           } else {
@@ -212,22 +244,39 @@ const ChatList = () => {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const newUsers = [];
       snapshot.forEach((doc) => {
-        newUsers.push(doc.data());
+        const userData = doc.data();
+        newUsers.push(userData);
+
+        // Check if is_playing changed for this user
+        setChats((prevChats) =>
+          prevChats.map((chat) => {
+            if (
+              chat.receiverId === userData.id ||
+              chat.senderId === userData.id
+            ) {
+              const updatedChat = { ...chat };
+
+              if (userData.is_playing) {
+                updatedChat.is_playing_as_avatar = userData.avatar;
+                updatedChat.is_playing_as_username = userData.username;
+              } else {
+                updatedChat.is_playing_as_avatar = null;
+                updatedChat.is_playing_as_username = null;
+              }
+
+              return updatedChat;
+            }
+            return chat;
+          })
+        );
       });
 
-      const filteredUsers = newUsers.filter(
-        (user) => user.id !== currentUser.id
-      );
-      setUsers(filteredUsers);
-
-      if (filteredUsers.length > 0 && !hasCreatedChats) {
-        createChatsAndAddUsers(filteredUsers);
-        setHasCreatedChats(true);
-      }
+      // Update the users state for rendering or other operations
+      setUsers(newUsers.filter((user) => user.id !== currentUser.id));
     });
 
     return () => unsubscribe();
-  }, [currentUser, hasCreatedChats]);
+  }, [currentUser]);
 
   const handleSelect = async (chat) => {
     const userChats = chats.map((item) => {
@@ -276,11 +325,13 @@ const ChatList = () => {
               }}
             >
               <img
-                src={chat.user.avatar || "../../../../public/avatar.png"}
-                alt={chat.user.username}
+                src={
+                  chat.is_playing_as_avatar || "../../../../public/avatar.png"
+                }
+                alt={chat.is_playing_as_username}
               />
               <div className="texts">
-                <span>{chat.user.username}</span>
+                <span>{chat.is_playing_as_username}</span>
                 <p>{chat.lastMessage}</p>
               </div>
             </div>

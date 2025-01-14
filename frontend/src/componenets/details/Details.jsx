@@ -5,10 +5,22 @@ import { useChatStore } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
 import { toast } from "react-toastify";
 
+import {
+  arrayUnion,
+  doc,
+  getDoc,
+  onSnapshot,
+  updateDoc,
+} from "firebase/firestore";
+import { db } from "../../lib/firebase";
+
 const Details = () => {
   const { currentUser, decrementHints } = useUserStore();
   const { chatId, user } = useChatStore();
   const [userHints, setUserHints] = useState({});
+  const [userPlayingData, setUserPlayingData] = useState(null);
+
+  console.log(user);
 
   useEffect(() => {
     setUserHints((prevHints) => ({
@@ -41,12 +53,42 @@ const Details = () => {
     }
   };
 
-  console.log(currentUser.no_of_hints);
+  useEffect(() => {
+    if (user?.is_playing) {
+      const fetchUserData = async () => {
+        const fetchedUser = await userIsPlayingAs(user.is_playing);
+        setUserPlayingData(fetchedUser);
+      };
+      fetchUserData();
+    }
+  }, [user?.is_playing]);
+
+  const userIsPlayingAs = async (id) => {
+    if (id) {
+      const userDocRef = doc(db, "users", id);
+      try {
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          return userDoc.data();
+        } else {
+          return null;
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        return null;
+      }
+    }
+    return null;
+  };
+
   return (
     <div className="detail">
       <div className="user">
-        <img src="./avatar.png" alt="" />
-        <h2>{user.username}</h2>
+        <img
+          src={userPlayingData ? userPlayingData.avatar : "/avatar.png"}
+          alt=""
+        />
+        <h2>{userPlayingData ? userPlayingData.username : "Loading..."}</h2>
         <div className="hints_box">
           <div className="">
             {userHints[user.id]?.hint1 ? (

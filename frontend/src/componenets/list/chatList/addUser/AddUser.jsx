@@ -8,7 +8,8 @@ import { toast } from "react-toastify";
 const AddUser = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { currentUser, setAllPlayers, allPlayers } = useUserStore();
+  const { currentUser, setAllPlayers, allPlayers, setCurrentUser } =
+    useUserStore();
 
   useEffect(() => {
     if (!currentUser.game_code || !currentUser) {
@@ -72,22 +73,102 @@ const AddUser = () => {
     }
   }, [users]);
 
+  useEffect(() => {
+    if (users.length > 0) {
+      const allUsersValid = users.every(
+        (user) => user.is_playing && user.is_playing !== ""
+      );
+      if (!allUsersValid) {
+        console.error("Not all users have a valid 'is_playing' property.");
+        console.error(
+          "Invalid users:",
+          users.filter((user) => !user.is_playing)
+        );
+      }
+    }
+  }, [users]);
+
   const handlePlayersReady = async () => {
     try {
+      await assignRandomIsPlaying();
+
       const gameLobbyDocRef = doc(db, "gameLobby", currentUser.game_code);
-      await updateDoc(gameLobbyDocRef, {
-        gameState: "ready",
-      });
+      await updateDoc(gameLobbyDocRef, { gameState: "ready" });
 
       setAllPlayers(users);
       toast.success("All players are ready!");
     } catch (error) {
-      toast.error("Failed to update game state.");
+      toast.error("Failed to update game state or assign players.");
       console.error(error);
     }
   };
 
-  console.log("allPlayers from the state!", allPlayers);
+  const assignRandomIsPlaying = async () => {
+    if (users.length < 2) {
+      toast.error("Not enough users to assign is_playing.");
+      return;
+    }
+
+    try {
+      let availableIds = [...users.map((user) => user.id)].sort(
+        () => Math.random() - 0.5
+      );
+
+      console.log("Shuffled IDs for assignment:", availableIds);
+
+      let hasConflicts = true;
+
+      while (hasConflicts) {
+        hasConflicts = false;
+
+        for (let i = 0; i < users.length; i++) {
+          if (availableIds[i] === users[i].id) {
+            hasConflicts = true;
+            const swapIndex = (i + 1) % availableIds.length;
+            [availableIds[i], availableIds[swapIndex]] = [
+              availableIds[swapIndex],
+              availableIds[i],
+            ];
+          }
+        }
+      }
+
+      console.log("Conflict-free IDs for assignment:", availableIds);
+
+      const updates = [];
+      const updatedUsers = [];
+
+      for (let i = 0; i < users.length; i++) {
+        const currentUserId = users[i].id;
+        const assignedId = availableIds[i];
+
+        console.log(`Assigning ID ${assignedId} to user ${currentUserId}`);
+
+        const userDocRef = doc(db, "users", currentUserId);
+        updates.push(updateDoc(userDocRef, { is_playing: assignedId }));
+
+        updatedUsers.push({
+          ...users[i],
+          is_playing: assignedId,
+        });
+      }
+
+      await Promise.all(updates);
+      setUsers(updatedUsers);
+      toast.success(
+        "Random is_playing assignments completed without conflicts!"
+      );
+    } catch (error) {
+      toast.error("Failed to assign is_playing properties.");
+      console.error(error);
+    }
+  };
+
+  console.log(
+    " NeWWWWWWWWWWWWWWWWW allPlayers from the state in the adduser!",
+    allPlayers
+  );
+  console.log(" NewWWWWWWWWWWWWWWWW users from the AddUser", users);
 
   return (
     <div className="addUser">

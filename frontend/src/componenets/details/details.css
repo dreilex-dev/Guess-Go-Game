@@ -1,12 +1,64 @@
 .detail {
   flex: 1;
+  width: 150px;
+  height: 100%;
 
+  .hints_box {
+    flex-basis: 100%;
+    padding: 20px;
+    display: flex;
+    width: 310px;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 2px;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    scrollbar-width: none;
+
+    -ms-overflow-style: none;
+  }
+
+  .btn-info {
+    background-color: transparent;
+    color: white;
+    border: none;
+    padding: 15px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    size: 150px;
+  }
+
+  p.hint {
+    font-size: 18px; /* Adjust font size for readability */
+    color: white; /* Text color */
+    background-color: transparent; /* Background for visibility */
+    padding: 10px; /* Add spacing around the text */
+    border-radius: 5px; /* Rounded corners */
+    width: 250px;
+    text-align: center; /* Center-align the text */
+    word-wrap: break-word; /* Ensure long words break into the next line */ /* Handle overflow for long text */
+    line-height: 1.5; /* Space between lines for readability */
+    max-width: 500px; /* Optional: Limit the width for better layout */
+    margin: 0 auto; /* Center align within the container */
+  }
+
+  .btn-info:hover {
+    background-color: #f8ffe5;
+    color: black;
+  }
   .user {
     padding: 30px 20px;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 15px;
+    height: 340px;
     border-bottom: 1px solid #dddddd35;
 
     img {
@@ -18,10 +70,33 @@
   }
 
   .info {
+    flex-basis: 50%;
     padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 25px;
+    overflow-y: auto;
+    border: 1px solid #dddddd35;
+    background-color: transparent;
+    scrollbar-width: thin;
+    scrollbar-color: #cccccc transparent;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background-color: #cccccc;
+      border-radius: 5px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background-color: #999999;
+    }
 
     .option {
       .title {
@@ -94,16 +169,16 @@
     }
 
     .btn-primary {
-      background-color: #B8001F;
+      background-color: #b8001f;
       color: white;
 
       &:hover {
-        background-color: #99021b; 
+        background-color: #99021b;
       }
     }
 
     .btn-secondary {
-      background-color: #1B9AAA;
+      background-color: #1b9aaa;
       color: white;
 
       &:hover {

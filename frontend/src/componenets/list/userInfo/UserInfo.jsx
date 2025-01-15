@@ -1,51 +1,83 @@
+import React, { useEffect, useState } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
 import { useUserStore } from "../../../lib/userStore";
+import { db } from "../../../lib/firebase";
 import "./userInfo.css";
-import React, { useEffect } from "react";
 
 const UserInfo = () => {
-  const { currentUser, fetchPlayingUserInfo, playingUser } = useUserStore();
+  const { currentUser, setCurrentUser } = useUserStore();
+  const [userPlayingData, setUserPlayingData] = useState(null);
+
+  console.log(currentUser.no_of_hints);
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const userDocRef = doc(db, "users", currentUser.id);
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          setCurrentUser({ ...docSnapshot.data(), id: docSnapshot.id });
+        }
+      },
+      (error) => console.error("Error listening to currentUser changes:", error)
+    );
+
+    return unsubscribe;
+  }, [currentUser?.id, setCurrentUser]);
 
   useEffect(() => {
-    if (currentUser?.is_playing) {
-      fetchPlayingUserInfo(currentUser.is_playing);
+    if (!currentUser?.is_playing) {
+      setUserPlayingData(null);
+      return;
     }
-  }, [currentUser, fetchPlayingUserInfo]);
+
+    const playingDocRef = doc(db, "users", currentUser.is_playing);
+    const unsubscribe = onSnapshot(
+      playingDocRef,
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          setUserPlayingData(docSnapshot.data());
+        } else {
+          setUserPlayingData(null);
+        }
+      },
+      (error) =>
+        console.error("Error listening to playing user changes:", error)
+    );
+
+    return unsubscribe;
+  }, [currentUser?.is_playing]);
+
+  if (!userPlayingData) {
+    return <div>Loading user info...</div>;
+  }
 
   return (
-    <>
-      <div className="userInfo">
-        {" "}
-        {/**The player you are playing as! */}
-        {playingUser ? (
-          <div className="playingUser">
-            <div className="user">
-              <img
-                src={playingUser.avatar || "./avatar.png"}
-                alt="Playing User Avatar"
-              />
-              <h2>{playingUser.username}</h2>
-              <div className="icons">
-                <img src="./video.png" alt="" />
-                <img src="./edit.png" alt="" />
-              </div>
-            </div>
-          </div>
-        ) : (
-          currentUser && (
-            <>
-              <div className="user">
-                <img src={currentUser.avatar || "./avatar.png"} alt="" />
-                <h2>{currentUser.username}</h2>
-              </div>
-              <div className="icons">
-                <img src="./video.png" alt="" />
-                <img src="./edit.png" alt="" />
-              </div>
-            </>
-          )
-        )}
+    <div className="userInfo">
+      <div className="playingUser">
+        <div className="user">
+          <img
+            src={userPlayingData.avatar || "/avatar.png"}
+            alt="Playing User Avatar"
+          />
+          <h2>{userPlayingData.username}</h2>
+        </div>
       </div>
-    </>
+      <div className="icons">
+        <p>
+          {currentUser.no_of_hints === 3 ? (
+            <>🤔🤔🤔</>
+          ) : currentUser.no_of_hints === 2 ? (
+            <>🤔🤔</>
+          ) : currentUser.no_of_hints === 1 ? (
+            <>🤔</>
+          ) : (
+            "❌"
+          )}
+        </p>
+      </div>
+    </div>
   );
 };
 

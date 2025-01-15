@@ -11,6 +11,9 @@ import {
   updateDoc,
   addDoc,
   serverTimestamp,
+  query,
+  where,
+  getDocs,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { nanoid } from "nanoid";
@@ -79,39 +82,52 @@ const Login = () => {
       const gameLobbyRef = doc(db, "gameLobby", game_code);
       const gameLobbySnap = await getDoc(gameLobbyRef);
 
+      const gameLobbyData = gameLobbySnap.data();
+
       if (!gameLobbySnap.exists()) {
         toast.error("Invalid game code. Please try again.");
         setLoadingJoin(false);
         window.location.reload();
         return;
       }
-      const userId = nanoid();
 
-      useUserStore.getState().setCurrentUser({
-        id: userId,
-        username: username_join,
-        game_code,
-        hint_no1: hint_no1_join,
-        hint_no2: hint_no2_join,
-        avatar: avatarJoin,
-        no_of_hints: 3,
-        points: 0,
-        is_playing: "",
-      });
+      const userQuery = query(
+        collection(db, "users"),
+        where("username", "==", username_join),
+        where("game_code", "==", game_code)
+      );
 
-      const gameLobbyData = gameLobbySnap.data();
-      await updateDoc(gameLobbyRef, {
-        participants: [
-          ...gameLobbyData.participants,
-          {
-            id: userId,
-          },
-        ],
-      });
+      const userSnap = await getDocs(userQuery);
+      let userId;
 
-      await setDoc(
-        doc(db, "users", userId),
-        {
+      if (!userSnap.empty) {
+        const existingUser = userSnap.docs[0].data();
+        userId = existingUser.id;
+
+        useUserStore.getState().setCurrentUser({
+          id: userId,
+          username: existingUser.username,
+          game_code: existingUser.game_code,
+          hint_no1: existingUser.hint_no1,
+          hint_no2: existingUser.hint_no2,
+          avatar: existingUser.avatar,
+          no_of_hints: existingUser.no_of_hints,
+          points: existingUser.points,
+          is_playing: existingUser.is_playing,
+        });
+
+        toast.success("Welcome back! You have joined the game.");
+      } else {
+        if (
+          gameLobbyData.participants &&
+          gameLobbyData.participants.length >= 6
+        ) {
+          toast.error("Sorry, the lobby is full. You cannot join.");
+          setLoadingJoin(false);
+          return;
+        }
+        userId = nanoid();
+        useUserStore.getState().setCurrentUser({
           id: userId,
           username: username_join,
           game_code,
@@ -121,18 +137,43 @@ const Login = () => {
           no_of_hints: 3,
           points: 0,
           is_playing: "",
-        },
-        { merge: true }
-      );
+        });
 
-      await setDoc(
-        doc(db, "userChats", userId),
-        {
-          chats: [],
-        },
-        { merge: true }
-      );
-      toast.success("You can join the game now!");
+        await updateDoc(gameLobbyRef, {
+          participants: [
+            ...gameLobbyData.participants,
+            {
+              id: userId,
+            },
+          ],
+        });
+
+        await setDoc(
+          doc(db, "users", userId),
+          {
+            id: userId,
+            username: username_join,
+            game_code,
+            hint_no1: hint_no1_join,
+            hint_no2: hint_no2_join,
+            avatar: avatarJoin,
+            no_of_hints: 3,
+            points: 0,
+            is_playing: "",
+          },
+          { merge: true }
+        );
+
+        await setDoc(
+          doc(db, "userChats", userId),
+          {
+            chats: [],
+          },
+          { merge: true }
+        );
+
+        toast.success("You can join the game now!");
+      }
     } catch (error) {
       toast.error(
         "An error occurred while joining the game. Please try again."
@@ -207,6 +248,7 @@ const Login = () => {
           createdBy: userId,
           createdAt: serverTimestamp(),
           participants: [{ id: userId }],
+          gameState: "notReady",
         },
         { merge: true }
       );

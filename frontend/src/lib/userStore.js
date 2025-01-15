@@ -8,9 +8,12 @@ export const useUserStore = create((set) => ({
   isLoading: true,
   playingUser: null,
   allPlayers: [],
+  gameState: "notReady",
   setAllPlayers: (players) => set({ allPlayers: players }),
+  setGameState: (str) => set({ gameState: str }),
   setCurrentUser: async (user) => set({ currentUser: user }),
   resetUser: () => set({ currentUser: null }),
+
   fetchUserInfo: async (uid) => {
     if (!uid) return set({ currentUser: null, isLoading: false });
 
@@ -93,8 +96,11 @@ export const useUserStore = create((set) => ({
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
-        set({ playingUser: docSnap.data() });
+        const userData = docSnap.data();
+        console.log("Fetched playing user data:", userData);
+        set({ playingUser: userData });
       } else {
+        console.log("Playing user not found");
         set({ playingUser: null });
       }
     } catch (err) {
@@ -102,6 +108,4 @@ export const useUserStore = create((set) => ({
       set({ playingUser: null });
     }
   },
-
-  fetch,
 }));

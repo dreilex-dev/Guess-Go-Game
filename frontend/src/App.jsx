@@ -4,11 +4,14 @@ import Chat from "./componenets/chat/Chat";
 import Login from "./componenets/login/Login";
 import Notification from "./componenets/notification/Notification";
 import { useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./lib/firebase";
 import { useUserStore } from "./lib/userStore";
 import { useChatStore } from "./lib/chatStore";
 import Lobby from "./componenets/lobby/Lobby";
+import AddUser from "./componenets/list/chatList/addUser/AddUser";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "./lib/firebase";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import GameLobby from "./componenets/GameLobby";
 
 const App = () => {
   const {
@@ -18,6 +21,9 @@ const App = () => {
     incrementPoints,
     decrementHints,
     setIsPlaying,
+    allPlayers,
+    gameState,
+    setGameState,
   } = useUserStore();
 
   const { chatId } = useChatStore();
@@ -28,22 +34,56 @@ const App = () => {
     }
   }, [fetchUserInfo]);
 
+  useEffect(() => {
+    if (currentUser && currentUser.game_code) {
+      const gameLobbyDocRef = doc(db, "gameLobby", currentUser.game_code);
+      const unsubscribe = onSnapshot(gameLobbyDocRef, (gameLobbyDoc) => {
+        if (gameLobbyDoc.exists()) {
+          const lobbyData = gameLobbyDoc.data();
+          if (lobbyData.gameState === "ready") {
+            setGameState("ready");
+          }
+        }
+      });
+
+      return () => unsubscribe();
+    }
+  }, [currentUser, currentUser?.game_code, setGameState]);
+
   if (isLoading) return <div className="loading">Loading..</div>;
+
   return (
-    <div className="container">
-      {currentUser ? (
-        currentUser.game_code? (
-          <Lobby />
-        ) : (
-          <Login />
-        )
-      ) : (
-        <Login />
-      )}
-      <Notification />
-    </div>
+    <Router>
+      <div className="container">
+        <Routes>
+          {!currentUser && <Route path="*" element={<Login />} />}
+          {currentUser && gameState !== "ready" && (
+            <Route path="*" element={<Lobby />} />
+          )}
+          {currentUser && gameState === "ready" && (
+            <>
+              <Route path="/" element={<GameLobby />} />{" "}
+              <Route
+                path="/chat_room"
+                element={
+                  <>
+                    <List />
+                    {chatId && (
+                      <>
+                        <Chat />
+                        <Details />
+                      </>
+                    )}
+                  </>
+                }
+              />
+            </>
+          )}
+        </Routes>
+        <Notification />
+      </div>
+    </Router>
   );
-  
 };
 
 export default App;

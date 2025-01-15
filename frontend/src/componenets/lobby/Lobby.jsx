@@ -5,6 +5,7 @@ import PlayerCard from "./PlayerCard";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 import LeaveButton from "./LeaveButton";
+import ChatButton from "./ChatButton";
 
 const Lobby = () => {
   const [players, setPlayers] = useState([]);
@@ -56,17 +57,21 @@ const Lobby = () => {
   const handleLeave = () => {
     console.log("Leave button clicked!");
   }
+  const handleChatClick =() => {
+    console.log("Chat button clocked!");
+    //logic pending
+  }
 
   return (
-    <div className="py-4">
+    <div>
       {/* Lobby Header */}
       <div className="row align-items-center mb-4">
       {/* Lobby Code */}
-      <div className="col-auto">
+      <div className="col-auto d-flex align-items-center">
         <GameCode gameCode={lobbyCode} />
       </div>
       {/* Leave Button */}
-      <div className="col-auto ms-auto">
+      <div className="col-auto ms-auto d-flex align-items-center">
         <LeaveButton onLeave={handleLeave} />
       </div>
     </div>
@@ -82,6 +87,12 @@ const Lobby = () => {
           </div>
         ))}
       </div>
+      
+      {/*Chat Button*/}
+      <div className="text-center mt-3">
+        <ChatButton onChatClick={handleChatClick} />
+      </div>
+      
     </div>
   );
 };

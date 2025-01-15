@@ -29,6 +29,8 @@ const Details = () => {
     }));
   }, [user.id]);
 
+  console.log(currentUser);
+
   const handleShowHint1 = () => {
     if (currentUser.no_of_hints > 0) {
       setUserHints((prev) => ({
@@ -37,7 +39,7 @@ const Details = () => {
       }));
       decrementHints(currentUser.id);
     } else {
-      toast.error("Sorry! You dont have hints left!");
+      toast.error(` ${currentUser.username} Sorry! You dont have hints left!`);
     }
   };
 
@@ -50,6 +52,9 @@ const Details = () => {
       decrementHints(currentUser.id);
     } else {
       toast.error("Sorry! You dont have hints left!");
+      console.error(
+        ` ${currentUser.username} Sorry! You dont have hints left!`
+      );
     }
   };
 

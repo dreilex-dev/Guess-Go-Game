@@ -414,9 +414,6 @@ const ChatList = () => {
     }
   }, [searchTerm]);
 
-  console.log("Chatssssssss", chats);
-  console.log(filteredChats);
-
   return (
     <>
       <div className="chatList">

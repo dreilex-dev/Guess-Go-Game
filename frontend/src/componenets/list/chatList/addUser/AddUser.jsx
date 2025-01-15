@@ -13,7 +13,7 @@ const AddUser = () => {
 
   useEffect(() => {
     if (!currentUser.game_code || !currentUser) {
-      toast.error("Game lobby code not found for the current user.");
+      console.error("Game lobby code not found for the current user.");
       setLoading(false);
       return;
     }
@@ -98,14 +98,15 @@ const AddUser = () => {
       setAllPlayers(users);
       toast.success("All players are ready!");
     } catch (error) {
-      toast.error("Failed to update game state or assign players.");
+      console.log("Failed to update game state or assign players.");
       console.error(error);
     }
   };
 
   const assignRandomIsPlaying = async () => {
     if (users.length < 2) {
-      toast.error("Not enough users to assign is_playing.");
+      toast.error("Not enough players.");
+      console.log("Not enough players to assign is_playing.");
       return;
     }
 
@@ -113,9 +114,6 @@ const AddUser = () => {
       let availableIds = [...users.map((user) => user.id)].sort(
         () => Math.random() - 0.5
       );
-
-      console.log("Shuffled IDs for assignment:", availableIds);
-
       let hasConflicts = true;
 
       while (hasConflicts) {
@@ -133,17 +131,12 @@ const AddUser = () => {
         }
       }
 
-      console.log("Conflict-free IDs for assignment:", availableIds);
-
       const updates = [];
       const updatedUsers = [];
 
       for (let i = 0; i < users.length; i++) {
         const currentUserId = users[i].id;
         const assignedId = availableIds[i];
-
-        console.log(`Assigning ID ${assignedId} to user ${currentUserId}`);
-
         const userDocRef = doc(db, "users", currentUserId);
         updates.push(updateDoc(userDocRef, { is_playing: assignedId }));
 
@@ -155,20 +148,12 @@ const AddUser = () => {
 
       await Promise.all(updates);
       setUsers(updatedUsers);
-      toast.success(
-        "Random is_playing assignments completed without conflicts!"
-      );
+      console.log("Random is_playing assignments completed without conflicts!");
     } catch (error) {
-      toast.error("Failed to assign is_playing properties.");
+      console.log("Failed to assign is_playing properties.");
       console.error(error);
     }
   };
-
-  console.log(
-    " NeWWWWWWWWWWWWWWWWW allPlayers from the state in the adduser!",
-    allPlayers
-  );
-  console.log(" NewWWWWWWWWWWWWWWWW users from the AddUser", users);
 
   return (
     <div className="addUser">

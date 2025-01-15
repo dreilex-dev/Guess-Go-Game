@@ -1,66 +1,52 @@
 import React, { useEffect, useState } from "react";
 import { doc, onSnapshot } from "firebase/firestore";
-import { useUserStore } from "../../../lib/userStore"; // Your custom user store
+import { useUserStore } from "../../../lib/userStore";
 import { db } from "../../../lib/firebase";
 import "./userInfo.css";
 
 const UserInfo = () => {
-  const { currentUser, setCurrentUser } = useUserStore(); // Assume setCurrentUser is available for updates
+  const { currentUser, setCurrentUser } = useUserStore();
   const [userPlayingData, setUserPlayingData] = useState(null);
 
-  // Listen for real-time updates to currentUser
+  console.log(currentUser.no_of_hints);
   useEffect(() => {
-    let unsubscribe;
+    if (!currentUser?.id) return;
 
-    if (currentUser?.id) {
-      const userDocRef = doc(db, "users", currentUser.id);
-
-      unsubscribe = onSnapshot(
-        userDocRef,
-        (docSnapshot) => {
-          if (docSnapshot.exists()) {
-            const updatedUser = docSnapshot.data();
-            setCurrentUser({ ...updatedUser, id: docSnapshot.id }); // Update currentUser in the store
-          }
-        },
-        (error) => {
-          console.error("Error listening to currentUser changes:", error);
+    const userDocRef = doc(db, "users", currentUser.id);
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          setCurrentUser({ ...docSnapshot.data(), id: docSnapshot.id });
         }
-      );
-    }
+      },
+      (error) => console.error("Error listening to currentUser changes:", error)
+    );
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    return unsubscribe;
   }, [currentUser?.id, setCurrentUser]);
 
-  // Real-time listener for `is_playing` changes
   useEffect(() => {
-    let unsubscribe;
-
-    if (currentUser?.is_playing) {
-      const playingDocRef = doc(db, "users", currentUser.is_playing);
-
-      unsubscribe = onSnapshot(
-        playingDocRef,
-        (docSnapshot) => {
-          if (docSnapshot.exists()) {
-            setUserPlayingData(docSnapshot.data());
-          } else {
-            setUserPlayingData(null);
-          }
-        },
-        (error) => {
-          console.error("Error listening to playing user changes:", error);
-        }
-      );
-    } else {
+    if (!currentUser?.is_playing) {
       setUserPlayingData(null);
+      return;
     }
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    const playingDocRef = doc(db, "users", currentUser.is_playing);
+    const unsubscribe = onSnapshot(
+      playingDocRef,
+      (docSnapshot) => {
+        if (docSnapshot.exists()) {
+          setUserPlayingData(docSnapshot.data());
+        } else {
+          setUserPlayingData(null);
+        }
+      },
+      (error) =>
+        console.error("Error listening to playing user changes:", error)
+    );
+
+    return unsubscribe;
   }, [currentUser?.is_playing]);
 
   if (!userPlayingData) {
@@ -76,11 +62,20 @@ const UserInfo = () => {
             alt="Playing User Avatar"
           />
           <h2>{userPlayingData.username}</h2>
-          <div className="icons">
-            <img src="./video.png" alt="Video" />
-            <img src="./edit.png" alt="Edit" />
-          </div>
         </div>
+      </div>
+      <div className="icons">
+        <p>
+          {currentUser.no_of_hints === 3 ? (
+            <>🤔🤔🤔</>
+          ) : currentUser.no_of_hints === 2 ? (
+            <>🤔🤔</>
+          ) : currentUser.no_of_hints === 1 ? (
+            <>🤔</>
+          ) : (
+            "❌"
+          )}
+        </p>
       </div>
     </div>
   );

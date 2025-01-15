@@ -4,13 +4,13 @@ import Chat from "./componenets/chat/Chat";
 import Login from "./componenets/login/Login";
 import Notification from "./componenets/notification/Notification";
 import { useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./lib/firebase";
 import { useUserStore } from "./lib/userStore";
 import { useChatStore } from "./lib/chatStore";
 import AddUser from "./componenets/list/chatList/addUser/AddUser";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "./lib/firebase";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import GameLobby from "./componenets/GameLobby";
 
 const App = () => {
   const {
@@ -51,19 +51,36 @@ const App = () => {
 
   if (isLoading) return <div className="loading">Loading..</div>;
   return (
-    <div className="container">
-      {currentUser ? (
-        <>
-          {gameState !== "ready" && <AddUser />}
-          {gameState === "ready" && <List />}
-          {chatId && <Chat />}
-          {chatId && <Details />}
-        </>
-      ) : (
-        <Login />
-      )}
-      <Notification />
-    </div>
+    <Router>
+      <div className="container">
+        <Routes>
+          {!currentUser && <Route path="*" element={<Login />} />}
+          {currentUser && gameState !== "ready" && (
+            <Route path="*" element={<AddUser />} />
+          )}
+          {currentUser && gameState === "ready" && (
+            <>
+              <Route path="/" element={<GameLobby />} />{" "}
+              <Route
+                path="/chat_room"
+                element={
+                  <>
+                    <List />
+                    {chatId && (
+                      <>
+                        <Chat />
+                        <Details />
+                      </>
+                    )}
+                  </>
+                }
+              />
+            </>
+          )}
+        </Routes>
+        <Notification />
+      </div>
+    </Router>
   );
 };
 

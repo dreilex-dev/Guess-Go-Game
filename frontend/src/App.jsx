@@ -11,7 +11,7 @@ import AddUser from "./componenets/list/chatList/addUser/AddUser";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "./lib/firebase";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import GameLobby from "./componenets/GameLobby";
+
 
 const App = () => {
   const {

@@ -11,9 +11,9 @@ const PlayerCard = ({ avatar, onChat, onReveal }) => {
       />
       <div className="card-body">
         <div className="d-flex justify-content-around">
-          <button className="btn btn-primary btn-sm" onClick={onChat}>
+          {/* <button className="btn btn-primary btn-sm" onClick={onChat}>
             Chat
-          </button>
+          </button> */}
           <button className="btn btn-secondary btn-sm" onClick={onReveal}>
             Reveal
           </button>

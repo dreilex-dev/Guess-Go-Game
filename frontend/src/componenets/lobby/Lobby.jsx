@@ -4,6 +4,7 @@ import GameCode from "./GameCode";
 import PlayerCard from "./PlayerCard";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import LeaveButton from "./LeaveButton";
 
 const Lobby = () => {
   const [players, setPlayers] = useState([]);
@@ -52,8 +53,24 @@ const Lobby = () => {
     console.log(`Revealing information for player ID: ${player.id}`);
   };
 
+  const handleLeave = () => {
+    console.log("Leave button clicked!");
+  }
+
   return (
     <div className="d-flex flex-column justify-content-between h-100">
+      {/*Lobby header */}
+      <div className="row align-items-center mb-4 d-flex justify-content-between">
+        <div className="col-4">
+          <GameCode gameCode={lobbyCode} />
+        </div>
+
+        <div className="col-6 text-end">
+          <LeaveButton onLeave={handleLeave} />
+        </div>
+
+
+      </div>
       <div className="row g-3 justify-content-start">
         {players.map((player) => (
           <div className="col-12 col-sm-6 col-md-4 col-lg-3" key={player.id}>
@@ -64,11 +81,6 @@ const Lobby = () => {
             />
           </div>
         ))}
-      </div>
-      <div className="row g-4 mt-auto">
-        <div className="col-auto">
-          <GameCode gameCode={lobbyCode} />
-        </div>
       </div>
     </div>
   );

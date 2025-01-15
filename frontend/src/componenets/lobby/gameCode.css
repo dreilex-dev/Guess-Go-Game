@@ -1,33 +1,19 @@
 .game-code-container {
-    background: linear-gradient(135deg, #06d6a0, #1b9aaa);
-    color: #f8ffe5;
-    border-radius: 8px;
-    width: 250px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
-    font-weight: bold;
-    font-size: 18px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-  }
-  
-  .game-code-container:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
-  }
-  
-  
-  .game-code-label {
-    margin-right: 8px;
-    font-size: 16px;
-    font-weight: 500;
-    color: #f8ffe5;
-  }
-  
-  .game-code {
-    font-size: 18px;
-    font-weight: bold;
-    letter-spacing: 1px;
-  }
+  padding: 10px 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  color: #ffffff;
+  background-color: #06d6a0; /* Verde pentru armonie cu tematica */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-code-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+}
+
+.game-code-container:active {
+  transform: scale(0.98);
+}

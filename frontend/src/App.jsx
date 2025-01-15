@@ -6,6 +6,7 @@ import Notification from "./componenets/notification/Notification";
 import { useEffect } from "react";
 import { useUserStore } from "./lib/userStore";
 import { useChatStore } from "./lib/chatStore";
+import Lobby from "./componenets/lobby/Lobby";
 import AddUser from "./componenets/list/chatList/addUser/AddUser";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "./lib/firebase";
@@ -50,13 +51,14 @@ const App = () => {
   }, [currentUser, currentUser?.game_code, setGameState]);
 
   if (isLoading) return <div className="loading">Loading..</div>;
+
   return (
     <Router>
       <div className="container">
         <Routes>
           {!currentUser && <Route path="*" element={<Login />} />}
           {currentUser && gameState !== "ready" && (
-            <Route path="*" element={<AddUser />} />
+            <Route path="*" element={<Lobby />} />
           )}
           {currentUser && gameState === "ready" && (
             <>

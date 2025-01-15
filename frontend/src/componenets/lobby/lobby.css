@@ -1,0 +1,110 @@
+.chat-button {
+    display: inline-block;
+    padding: 15px 30px;
+    font-size: 20px;
+    font-weight: bold;
+    color: #f8ffe5; 
+    background: linear-gradient(45deg, #06d6a0, #1b9aaa); 
+    border: none;
+    border-radius: 50px;
+    box-shadow: 0 0 15px rgba(6, 214, 160, 0.5), 0 0 30px rgba(27, 153, 170, 0.5);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  
+  .chat-button:hover {
+    transform: scale(1.1);
+    background: linear-gradient(45deg, #1b9aaa, #b8001f); 
+    box-shadow: 0 0 25px rgba(27, 153, 170, 0.8), 0 0 50px rgba(184, 0, 31, 0.8);
+  }
+  
+  .chat-button:active {
+    transform: scale(1);
+    background: linear-gradient(45deg, #b8001f, #06d6a0); /* Gradient activ */
+    box-shadow: 0 0 10px rgba(184, 0, 31, 0.6), 0 0 20px rgba(6, 214, 160, 0.6);
+  }
+  
+  .chat-button-glow {
+    animation: glow 1.5s infinite alternate;
+  }
+  
+  @keyframes glow {
+    from {
+      box-shadow: 0 0 15px rgba(6, 214, 160, 0.5), 0 0 30px rgba(27, 153, 170, 0.5);
+    }
+    to {
+      box-shadow: 0 0 30px rgba(6, 214, 160, 0.8), 0 0 60px rgba(27, 153, 170, 0.8);
+    }
+  }
+  
+/* Lobby Code - Design consistent cu Open Chat */
+.game-code-container {
+  background: linear-gradient(135deg, #06d6a0, #1b9aaa);
+  color: #f8ffe5;
+  border-radius: 8px;
+  width: 250px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+  font-weight: bold;
+  font-size: 18px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.game-code-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Textul pentru lobby code */
+.game-code-label {
+  margin-right: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #f8ffe5;
+}
+
+.game-code {
+  font-size: 18px;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+/* Containerul principal al lobby-ului */
+.lobby-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  height: 100%;
+  padding: 20px;
+  gap: 20px;
+}
+
+/* Container pentru Lobby Code */
+.lobby-code-container {
+  align-self: flex-start; /* Poziționează în stânga */
+  margin-bottom: 20px; /* Spațiu față de carduri */
+}
+
+/* Container pentru cardurile jucătorilor */
+.players-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 20px;
+}
+
+/* Container pentru butonul de chat */
+.chat-button-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+
+  

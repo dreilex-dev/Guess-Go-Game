@@ -20,6 +20,8 @@ const Chat = () => {
   const [chat, setChat] = useState();
 
   const { currentUser } = useUserStore();
+  const [currentUserPlayingData, setCurrentUserPlayingData] = useState(null);
+
   const { chatId, user } = useChatStore();
   const [userPlayingData, setUserPlayingData] = useState(null);
 
@@ -95,6 +97,16 @@ const Chat = () => {
     }
   }, [user?.is_playing]);
 
+  useEffect(() => {
+    if (currentUser?.is_playing) {
+      const fetchcurrentUserPlayingDataData = async () => {
+        const fetchedUser = await userIsPlayingAs(currentUser.is_playing);
+        setCurrentUserPlayingData(fetchedUser);
+      };
+      fetchcurrentUserPlayingDataData();
+    }
+  }, [currentUser?.is_playing]);
+
   const userIsPlayingAs = async (id) => {
     if (id) {
       const userDocRef = doc(db, "users", id);
@@ -142,7 +154,18 @@ const Chat = () => {
             }
             key={index}
           >
-            <img src="./avatar.png" alt="" />
+            <img
+              src={
+                message.senderId === currentUser?.id
+                  ? currentUserPlayingData
+                    ? currentUserPlayingData.avatar
+                    : "/avatar.png"
+                  : userPlayingData
+                  ? userPlayingData.avatar
+                  : "/avatar.png"
+              }
+              alt=""
+            />
             <div className="texts">
               {message.img && <img src={message.img} alt="msg" />}
               <p>{message.text}</p>

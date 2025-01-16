@@ -46,6 +46,7 @@
     line-height: 1.5; /* Space between lines for readability */
     max-width: 500px; /* Optional: Limit the width for better layout */
     margin: 0 auto; /* Center align within the container */
+    cursor: pointer;
   }
 
   .btn-info:hover {
@@ -185,5 +186,9 @@
         background-color: #167d8b;
       }
     }
+  }
+
+  .hidden {
+    display: none;
   }
 }

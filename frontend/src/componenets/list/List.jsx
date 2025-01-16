@@ -6,8 +6,6 @@ import { useUserStore } from "./../../lib/userStore";
 
 const List = () => {
   const { currentUser } = useUserStore();
-
-  console.log("from list ", currentUser.is_playing);
   return (
     <div className="list">
       {

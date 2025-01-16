@@ -11,6 +11,8 @@ const AddUser = () => {
   const { currentUser, setAllPlayers, allPlayers, setCurrentUser } =
     useUserStore();
 
+  console.log(users);
+
   useEffect(() => {
     if (!currentUser.game_code || !currentUser) {
       console.error("Game lobby code not found for the current user.");
@@ -90,6 +92,11 @@ const AddUser = () => {
 
   const handlePlayersReady = async () => {
     try {
+      if (users.length <= 2) {
+        toast.error("Not enough players to start the game.");
+        console.log("Not enough players to set the game to ready.");
+        return;
+      }
       await assignRandomIsPlaying();
 
       const gameLobbyDocRef = doc(db, "gameLobby", currentUser.game_code);
@@ -134,11 +141,18 @@ const AddUser = () => {
       const updates = [];
       const updatedUsers = [];
 
+      const hintsValue = Math.floor(users.length / 2);
+
       for (let i = 0; i < users.length; i++) {
         const currentUserId = users[i].id;
         const assignedId = availableIds[i];
         const userDocRef = doc(db, "users", currentUserId);
-        updates.push(updateDoc(userDocRef, { is_playing: assignedId }));
+        updates.push(
+          updateDoc(userDocRef, {
+            is_playing: assignedId,
+            no_of_hints: hintsValue,
+          })
+        );
 
         updatedUsers.push({
           ...users[i],

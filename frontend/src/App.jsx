@@ -11,6 +11,7 @@ import AddUser from "./componenets/list/chatList/addUser/AddUser";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "./lib/firebase";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import HomePage from "./componenets/homePage/homePage";
 
 
 const App = () => {
@@ -81,6 +82,7 @@ const App = () => {
           )}
         </Routes>
         <Notification />
+        <HomePage />
       </div>
     </Router>
   );

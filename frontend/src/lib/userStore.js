@@ -51,25 +51,39 @@ export const useUserStore = create((set) => ({
     }
   },
 
-  decrementHints: async (uid) => {
+  decrementHints: async () => {
     try {
-      const docRef = doc(db, "users", uid);
-      const docSnap = await getDoc(docRef);
+      set((state) => {
+        const currentUser = state.currentUser;
 
-      if (docSnap.exists()) {
-        const currentHints = docSnap.data().no_of_hints || 0;
+        if (!currentUser) {
+          toast.error("No current user found.");
+          return state;
+        }
+
+        const currentHints = currentUser.no_of_hints || 0;
 
         if (currentHints > 0) {
           const updatedHints = currentHints - 1;
 
-          await updateDoc(docRef, { no_of_hints: updatedHints });
-          set((state) => ({
-            currentUser: { ...state.currentUser, no_of_hints: updatedHints },
-          }));
+          const docRef = doc(db, "users", currentUser.id);
+          updateDoc(docRef, { no_of_hints: updatedHints })
+            .then(() => {
+              console.log("Hint used successfully!");
+            })
+            .catch((error) => {
+              console.error("Error updating hints in Firebase:", error);
+            });
+
+          return {
+            ...state,
+            currentUser: { ...currentUser, no_of_hints: updatedHints },
+          };
         } else {
-          toast.error("No more hints available to decrement.");
+          toast.error("No more hints available.");
+          return state;
         }
-      }
+      });
     } catch (err) {
       console.error("Error decrementing hints:", err);
     }

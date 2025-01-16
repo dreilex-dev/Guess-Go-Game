@@ -4,59 +4,17 @@ import LogOutButton from "../LogOutButton";
 import { useChatStore } from "../../lib/chatStore";
 import { useUserStore } from "../../lib/userStore";
 import { toast } from "react-toastify";
-
-import {
-  arrayUnion,
-  doc,
-  getDoc,
-  onSnapshot,
-  updateDoc,
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../lib/firebase";
+import { useNavigate } from "react-router-dom";
 
 const Details = () => {
   const { currentUser, decrementHints } = useUserStore();
   const { chatId, user } = useChatStore();
-  const [userHints, setUserHints] = useState({});
   const [userPlayingData, setUserPlayingData] = useState(null);
-
-  console.log(user);
-
-  useEffect(() => {
-    setUserHints((prevHints) => ({
-      ...prevHints,
-      [user.id]: prevHints[user.id] || { hint1: false, hint2: false },
-    }));
-  }, [user.id]);
-
-  console.log(currentUser);
-
-  const handleShowHint1 = () => {
-    if (currentUser.no_of_hints > 0) {
-      setUserHints((prev) => ({
-        ...prev,
-        [user.id]: { ...prev[user.id], hint1: true },
-      }));
-      decrementHints(currentUser.id);
-    } else {
-      toast.error(` ${currentUser.username} Sorry! You dont have hints left!`);
-    }
-  };
-
-  const handleShowHint2 = () => {
-    if (currentUser.no_of_hints > 0) {
-      setUserHints((prev) => ({
-        ...prev,
-        [user.id]: { ...prev[user.id], hint2: true },
-      }));
-      decrementHints(currentUser.id);
-    } else {
-      toast.error("Sorry! You dont have hints left!");
-      console.error(
-        ` ${currentUser.username} Sorry! You dont have hints left!`
-      );
-    }
-  };
+  const [isHint1Hidden, setIsHint1Hidden] = useState(false);
+  const [isHint2Hidden, setIsHint2Hidden] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user?.is_playing) {
@@ -86,6 +44,27 @@ const Details = () => {
     return null;
   };
 
+  const handleGoBack = () => {
+    navigate("/");
+  };
+
+  const toggleHint1 = () => {
+    if (currentUser?.no_of_hints > 0) {
+      setIsHint1Hidden(true);
+      toast.info(user.hint_no1);
+      decrementHints();
+    } else {
+      toast.error("No hints left!");
+    }
+  };
+
+  const toggleHint2 = () => {
+    setIsHint2Hidden(!isHint2Hidden);
+    if (!isHint2Hidden) {
+      toast.info(user.hint_no2);
+    }
+  };
+
   return (
     <div className="detail">
       <div className="user">
@@ -95,23 +74,21 @@ const Details = () => {
         />
         <h2>{userPlayingData ? userPlayingData.username : "Loading..."}</h2>
         <div className="hints_box">
-          <div className="">
-            {userHints[user.id]?.hint1 ? (
-              <p className="hint">{user.hint_no1}</p>
-            ) : (
-              <button onClick={handleShowHint1} className="btn btn-info">
-                Show Hint 1
-              </button>
-            )}
+          <div>
+            <button
+              onClick={toggleHint1}
+              className={`btn btn-info ${isHint1Hidden ? "hidden" : ""}`}
+            >
+              {isHint1Hidden ? "Hide Hint 1" : "Show Hint 1"}
+            </button>
           </div>
           <div>
-            {userHints[user.id]?.hint2 ? (
-              <p className="hint">{user.hint_no2}</p>
-            ) : (
-              <button onClick={handleShowHint2} className="btn btn-info">
-                Show Hint 2
-              </button>
-            )}
+            <button
+              onClick={toggleHint2}
+              className={`btn btn-info ${isHint2Hidden ? "hidden" : ""}`}
+            >
+              {isHint2Hidden ? "Hide Hint 2" : "Show Hint 2"}
+            </button>
           </div>
         </div>
       </div>
@@ -121,8 +98,10 @@ const Details = () => {
             <span>Did you figure out who is this?</span>
           </div>
         </div>
-        <button className=" btn btn-primary">Click here then</button>
-        <button className="btn btn-secondary">Go back</button>
+        <button className="btn btn-primary">Click here then</button>
+        <button onClick={handleGoBack} className="btn btn-secondary">
+          Go back
+        </button>
         <LogOutButton />
       </div>
     </div>

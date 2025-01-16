@@ -104,6 +104,15 @@ const Login = () => {
         const existingUser = userSnap.docs[0].data();
         userId = existingUser.id;
 
+        if (
+          gameLobbyData.gameState === "ready" &&
+          existingUser.is_playing === ""
+        ) {
+          toast.error("The game has already started. You cannot join now.");
+          setLoadingJoin(false);
+          return;
+        }
+
         useUserStore.getState().setCurrentUser({
           id: userId,
           username: existingUser.username,

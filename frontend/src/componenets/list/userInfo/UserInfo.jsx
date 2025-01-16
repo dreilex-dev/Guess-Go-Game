@@ -8,7 +8,6 @@ const UserInfo = () => {
   const { currentUser, setCurrentUser } = useUserStore();
   const [userPlayingData, setUserPlayingData] = useState(null);
 
-  console.log(currentUser.no_of_hints);
   useEffect(() => {
     if (!currentUser?.id) return;
 
@@ -66,15 +65,11 @@ const UserInfo = () => {
       </div>
       <div className="icons">
         <p>
-          {currentUser.no_of_hints === 3 ? (
-            <>🤔🤔🤔</>
-          ) : currentUser.no_of_hints === 2 ? (
-            <>🤔🤔</>
-          ) : currentUser.no_of_hints === 1 ? (
-            <>🤔</>
-          ) : (
-            "❌"
-          )}
+          {currentUser.no_of_hints > 0
+            ? Array.from({ length: currentUser.no_of_hints }, (_, index) => (
+                <span key={index}>🤔</span>
+              ))
+            : "❌"}
         </p>
       </div>
     </div>
